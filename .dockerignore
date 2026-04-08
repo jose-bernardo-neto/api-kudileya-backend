@@ -1,0 +1,79 @@
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Tests
+coverage/
+.nyc_output/
+tests/
+*.test.ts
+*.spec.ts
+__tests__/
+__mocks__/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Documentation
+README.md
+PRD.md
+CHANGELOG.md
+LICENSE
+*.md
+doc.http
+docs/
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.test
+
+# Data (será criado em runtime)
+data/
+uploads/
+
+# Logs
+logs/
+*.log
+
+# Temp files
+tmp/
+temp/
+*.tmp
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.*.yml
+
+# Others
+.editorconfig
+.prettierrc
+.eslintrc.json
+tsconfig.json
+jest.config.js
