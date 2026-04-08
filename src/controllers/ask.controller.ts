@@ -137,18 +137,164 @@ export async function registerAskRoutes(app: any): Promise<void> {
 			config: {
 				rateLimit: askRateLimitOptions,
 			},
+			schema: {
+				description: 'Envia uma pergunta para o assistente de IA',
+				tags: ['Ask'],
+				body: {
+					type: 'object',
+					required: ['question'],
+					properties: {
+						question: {
+							type: 'string',
+							minLength: 5,
+							maxLength: 500,
+							description: 'Pergunta a ser enviada para a IA',
+						},
+					},
+				},
+				response: {
+					200: {
+						description: 'Resposta da IA',
+						type: 'object',
+						properties: {
+							answer: { type: 'string', description: 'Resposta da IA' },
+							timestamp: {
+								type: 'string',
+								format: 'date-time',
+								description: 'Momento da resposta',
+							},
+							provider: {
+								type: 'string',
+								description: 'Provider de IA utilizado',
+							},
+						},
+					},
+					400: {
+						description: 'Requisição inválida',
+						type: 'object',
+						properties: {
+							statusCode: { type: 'number', example: 400 },
+							error: { type: 'string', example: 'Bad Request' },
+							message: { type: 'string', example: 'Validation failed' },
+							details: { type: 'object' },
+						},
+					},
+					429: {
+						description: 'Limite de requisições excedido',
+						type: 'object',
+						properties: {
+							statusCode: { type: 'number', example: 429 },
+							error: { type: 'string', example: 'Too Many Requests' },
+							message: {
+								type: 'string',
+								example: 'Rate limit exceeded. Please try again later.',
+							},
+						},
+					},
+					503: {
+						description:
+							'Serviço de IA temporariamente indisponível (alta demanda, timeout, etc)',
+						type: 'object',
+						properties: {
+							statusCode: { type: 'number', example: 503 },
+							error: { type: 'string', example: 'Service Unavailable' },
+							message: {
+								type: 'string',
+								example:
+									'AI service error: Failed to get response from Gemini: [503 Service Unavailable] This model is currently experiencing high demand',
+							},
+							details: {
+								type: 'object',
+								properties: {
+									provider: { type: 'string', example: 'gemini' },
+									suggestion: {
+										type: 'string',
+										example:
+											'This is a temporary issue with the AI provider. Please try again in a few moments.',
+									},
+									retryable: { type: 'boolean', example: true },
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 		askQuestion,
 	);
 
 	// GET /api/v1/ask/health - Status da IA
-	app.get('/api/v1/ask/health', checkAIHealth);
+	app.get('/api/v1/ask/health', {
+		schema: {
+			description: 'Verifica o status e disponibilidade do provider de IA',
+			tags: ['Ask'],
+			response: {
+				200: {
+					description: 'Provider disponível',
+					type: 'object',
+					properties: {
+						provider: { type: 'string', description: 'Nome do provider' },
+						available: {
+							type: 'boolean',
+							description: 'Se o provider está disponível',
+						},
+						message: {
+							type: 'string',
+							description: 'Mensagem de status',
+						},
+					},
+				},
+				503: {
+					description: 'Provider indisponível',
+					type: 'object',
+					properties: {
+						provider: { type: 'string' },
+						available: { type: 'boolean', example: false },
+						message: { type: 'string' },
+					},
+				},
+			},
+		},
+		handler: checkAIHealth,
+	});
 
 	// POST /api/v1/ask/suggestions - Sugestões de perguntas
 	app.post(
 		'/api/v1/ask/suggestions',
 		{
 			preHandler: [validateBody(askRequestSchema)],
+			schema: {
+				description:
+					'Obtém sugestões de perguntas relacionadas baseadas em uma pergunta inicial',
+				tags: ['Ask'],
+				body: {
+					type: 'object',
+					required: ['question'],
+					properties: {
+						question: {
+							type: 'string',
+							minLength: 5,
+							maxLength: 500,
+							description: 'Pergunta base para gerar sugestões',
+						},
+					},
+				},
+				response: {
+					200: {
+						description:
+							'Lista de sugestões (pode retornar vazio em caso de falha)',
+						type: 'object',
+						properties: {
+							suggestions: {
+								type: 'array',
+								items: { type: 'string' },
+								description: 'Lista de perguntas sugeridas',
+							},
+							count: { type: 'number', description: 'Número de sugestões' },
+						},
+					},
+				},
+			},
 		},
 		getSuggestions,
 	);

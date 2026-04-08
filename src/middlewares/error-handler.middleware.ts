@@ -58,12 +58,38 @@ export async function errorHandler(
 
 	// Trata erro de provedor de IA
 	if (error instanceof AIProviderError) {
-		return reply.status(503).send({
+		// Detecta se é erro temporário (503, rate limit, etc)
+		const isTemporaryError =
+			error.message.includes('503') ||
+			error.message.includes('high demand') ||
+			error.message.includes('rate limit') ||
+			error.message.includes('timeout');
+
+		const baseResponse = {
 			statusCode: 503,
 			error: 'Service Unavailable',
 			message: `AI service error: ${error.message}`,
 			details: {
 				provider: error.provider,
+				...(isTemporaryError && {
+					suggestion:
+						'This is a temporary issue with the AI provider. Please try again in a few moments.',
+					retryable: true,
+				}),
+			},
+		} satisfies StandardError;
+
+		return reply.status(503).send(baseResponse);
+	}
+
+	// Trata erros de validação do schema do Fastify
+	if (error.statusCode === 400 && error.validation) {
+		return reply.status(400).send({
+			statusCode: 400,
+			error: 'Bad Request',
+			message: 'Validation failed',
+			details: {
+				errors: error.validation,
 			},
 		} satisfies StandardError);
 	}
