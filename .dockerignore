@@ -75,5 +75,5 @@ docker-compose.*.yml
 .editorconfig
 .prettierrc
 .eslintrc.json
-tsconfig.json
+# tsconfig.json é necessário para o build!
 jest.config.js
