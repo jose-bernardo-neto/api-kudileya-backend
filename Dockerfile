@@ -43,23 +43,15 @@ LABEL maintainer="support@kudileya.com"
 LABEL version="1.0.0"
 LABEL description="Kudileya AI Assistant API"
 
-# Criar usuário não-root
-RUN addgroup --system --gid 1001 nodejs \
-    && adduser --system --uid 1001 fastify
-
 WORKDIR /app
 
 # Copiar apenas arquivos necessários para produção
-COPY --from=builder --chown=fastify:nodejs /app/dist ./dist
-COPY --from=builder --chown=fastify:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=fastify:nodejs /app/package.json ./package.json
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
 
 # Criar diretórios necessários
-RUN mkdir -p data uploads \
-    && chown -R fastify:nodejs data uploads
-
-# Mudar para usuário não-root
-USER fastify
+RUN mkdir -p data uploads
 
 # Expor porta
 EXPOSE 3333
