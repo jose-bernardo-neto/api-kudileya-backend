@@ -12,7 +12,7 @@ COPY package.json pnpm-lock.yaml* package-lock.json* yarn.lock* ./
 RUN npm install -g pnpm
 
 # Instalar dependências de produção e desenvolvimento
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # ==================================
 # Stage 2: Builder
