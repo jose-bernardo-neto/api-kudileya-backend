@@ -20,13 +20,13 @@ const envSchema = z.object({
 	CORS_ORIGIN: z.string().default('*'),
 
 	// IA Provider
-	AI_PROVIDER: z.enum(['gemini', 'openai', 'mock']).default('mock'),
+	AI_PROVIDER: z.enum(['gemini', 'openai', 'mock']).default('gemini'),
 
 	// Gemini
 	GEMINI_API_KEY: z
 		.string()
 		.default('AIzaSyDA94FPQPb7fBT9ZbgtuPA9KC_C6B0dBLw'),
-	GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
+	GEMINI_MODEL: z.string().default('gemini-pro'),
 
 	// OpenAI
 	OPENAI_API_KEY: z.string().optional(),
@@ -53,7 +53,11 @@ const envSchema = z.object({
 
 	// Rate Limit
 	RATE_LIMIT_ASK_MAX: z.string().default('10'),
-	RATE_LIMIT_ASK_TIMEWINDOW: z.string().default('3600000'), // 1 hora
+	RATE_LIMIT_ASK_TIMEWINDOW: z.string().default('3600000'),
+
+	LOG_LEVEL: z
+        .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
+        .default('info'),
 });
 
 // Valida e tipifica as variáveis de ambiente
