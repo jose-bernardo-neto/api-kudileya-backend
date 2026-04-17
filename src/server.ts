@@ -171,6 +171,15 @@ export async function startServer(): Promise<FastifyInstance> {
 				case 'openai':
 					providerKey = config.ai.openai.apiKey;
 					break;
+				case 'openrouter':
+					providerKey = config.ai.openrouter.apiKey;
+					break;
+				case 'grok':
+					providerKey = config.ai.grok.apiKey;
+					break;
+				case 'mock':
+					providerKey = undefined;
+					break;
 				default:
 					providerKey = undefined;
 			}
