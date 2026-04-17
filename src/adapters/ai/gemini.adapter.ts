@@ -22,6 +22,13 @@ export class GeminiAdapter implements AIProvider {
 
 		if (config.apiKey) {
 			this.client = new GoogleGenerativeAI(config.apiKey);
+			// Log da chave mascarada para debug
+			const maskedKey = this.maskApiKey(config.apiKey);
+			console.log(
+				`[Gemini] Initialized with API Key: ${maskedKey}, Model: ${this.model}`,
+			);
+		} else {
+			console.warn('[Gemini] No API Key provided - provider will not be available');
 		}
 	}
 

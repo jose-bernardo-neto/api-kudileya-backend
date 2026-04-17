@@ -158,6 +158,46 @@ export async function startServer(): Promise<FastifyInstance> {
 		server.log.info(`📝 Environment: ${config.server.env}`);
 		server.log.info(`🤖 AI Provider: ${config.ai.provider}`);
 
+		// Log the API key used by the selected AI provider for debugging purposes.
+		// We redact the key by default to avoid leaking secrets in logs.
+		// Full key will be logged only in non-production environments when logger level is 'debug'.
+		try {
+			const provider = config.ai.provider;
+			let providerKey: string | undefined;
+			switch (provider) {
+				case 'gemini':
+					providerKey = config.ai.gemini.apiKey;
+					break;
+				case 'openai':
+					providerKey = config.ai.openai.apiKey;
+					break;
+				default:
+					providerKey = undefined;
+			}
+
+			if (providerKey) {
+				const redact = (k: string) =>
+					k.length > 10 ? `${k.slice(0, 6)}...${k.slice(-4)}` : '****';
+				const redacted = redact(providerKey);
+				server.log.info(
+					{ provider, providerKey: redacted },
+					'AI provider key (redacted)',
+				);
+
+				// If in debug mode and not production, log full key for debugging
+				if (
+					config.server.env !== 'production' &&
+					server.log.level === 'debug'
+				) {
+					server.log.debug({ provider, providerKey }, 'AI provider key (full)');
+				}
+			} else {
+				server.log.info({ provider }, 'No API key configured for AI provider');
+			}
+		} catch (e) {
+			server.log.warn({ err: e }, 'Failed to log AI provider key for debug');
+		}
+
 		// Graceful shutdown
 		const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM'];
 		signals.forEach((signal) => {
