@@ -39,13 +39,17 @@ export class GeminiAdapter implements AIProvider {
 	 */
 	async ask(question: string): Promise<string> {
 		if (!this.client) {
+			console.error('[Gemini] ask() called but client is null');
 			throw new AIProviderError(
-				'Gemini API key not configured',
+				'Gemini client not initialized. Please check your API key.',
 				this.getProviderName(),
 			);
 		}
 
 		try {
+			console.log('[Gemini] Sending question to model:', this.model);
+			console.log('[Gemini] Question length:', question.length);
+
 			const model = this.client.getGenerativeModel({ model: this.model });
 
 			// Cria uma promise com timeout
@@ -62,6 +66,8 @@ export class GeminiAdapter implements AIProvider {
 			const result = await response.response;
 			const text = result.text();
 
+			console.log('[Gemini] Response received, length:', text.length);
+
 			if (!text) {
 				throw new AIProviderError(
 					'Empty response from Gemini',
@@ -70,9 +76,42 @@ export class GeminiAdapter implements AIProvider {
 			}
 
 			return text;
-		} catch (error) {
+		} catch (error: any) {
+			console.error('[Gemini] Error in ask()');
+			console.error(
+				'[Gemini] Error type:',
+				error.constructor?.name || 'Unknown',
+			);
+			console.error('[Gemini] Error message:', error.message);
+			console.error(
+				'[Gemini] Full error:',
+				JSON.stringify(error, Object.getOwnPropertyNames(error), 2),
+			);
+
 			if (error instanceof AIProviderError) {
 				throw error;
+			}
+
+			// Tratamento específico de erros do Gemini
+			if (error.message?.includes('API key')) {
+				throw new AIProviderError(
+					'Invalid Gemini API key',
+					this.getProviderName(),
+				);
+			}
+
+			if (error.message?.includes('quota')) {
+				throw new AIProviderError(
+					'Gemini API quota exceeded',
+					this.getProviderName(),
+				);
+			}
+
+			if (error.name === 'AbortError' || error.message?.includes('timeout')) {
+				throw new AIProviderError(
+					`Gemini request timed out after ${this.timeout}ms`,
+					this.getProviderName(),
+				);
 			}
 
 			throw new AIProviderError(
@@ -87,21 +126,43 @@ export class GeminiAdapter implements AIProvider {
 	 * Verifica se o provedor está configurado e disponível
 	 */
 	async isAvailable(): Promise<boolean> {
-		if (!this.client || !this.config.apiKey) {
+		if (!this.client) {
+			console.log('[Gemini] isAvailable check: client is null');
+			return false;
+		}
+
+		if (!this.config.apiKey) {
+			console.log('[Gemini] isAvailable check: API key is missing');
 			return false;
 		}
 
 		try {
-			// Tenta fazer uma chamada simples para verificar disponibilidade
+			console.log('[Gemini] isAvailable check: testing with simple prompt...');
 			const model = this.client.getGenerativeModel({ model: this.model });
-			await this.withTimeout(
+			const result = await this.withTimeout(
 				model.generateContent({
-					contents: [{ role: 'user', parts: [{ text: 'test' }] }],
+					contents: [{ role: 'user', parts: [{ text: 'Hello' }] }],
 				}),
 				5000, // Timeout menor para check de disponibilidade
 			);
+			const response = await result.response;
+			const text = response.text();
+			console.log(
+				'[Gemini] isAvailable check: SUCCESS - got response:',
+				text.substring(0, 50),
+			);
 			return true;
-		} catch {
+		} catch (error: any) {
+			console.error('[Gemini] isAvailable check: FAILED');
+			console.error(
+				'[Gemini] Error type:',
+				error.constructor?.name || 'Unknown',
+			);
+			console.error('[Gemini] Error message:', error.message);
+			console.error(
+				'[Gemini] Error details:',
+				JSON.stringify(error, Object.getOwnPropertyNames(error), 2),
+			);
 			return false;
 		}
 	}
