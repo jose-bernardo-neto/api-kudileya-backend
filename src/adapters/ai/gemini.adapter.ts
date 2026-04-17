@@ -28,7 +28,9 @@ export class GeminiAdapter implements AIProvider {
 				`[Gemini] Initialized with API Key: ${maskedKey}, Model: ${this.model}`,
 			);
 		} else {
-			console.warn('[Gemini] No API Key provided - provider will not be available');
+			console.warn(
+				'[Gemini] No API Key provided - provider will not be available',
+			);
 		}
 	}
 
@@ -109,6 +111,16 @@ export class GeminiAdapter implements AIProvider {
 	 */
 	getProviderName(): string {
 		return 'gemini';
+	}
+
+	/**
+	 * Mascara a API key para logging seguro
+	 */
+	private maskApiKey(key: string): string {
+		if (!key || key.length < 10) {
+			return '****';
+		}
+		return `${key.slice(0, 6)}...${key.slice(-4)}`;
 	}
 
 	/**
