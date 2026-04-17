@@ -235,41 +235,6 @@ export async function registerAskRoutes(app: any): Promise<void> {
 		askQuestion,
 	);
 
-	// GET /api/v1/ask/health - Status da IA
-	app.get('/api/v1/ask/health', {
-		schema: {
-			description: 'Verifica o status e disponibilidade do provider de IA',
-			tags: ['Ask'],
-			response: {
-				200: {
-					description: 'Provider disponível',
-					type: 'object',
-					properties: {
-						provider: { type: 'string', description: 'Nome do provider' },
-						available: {
-							type: 'boolean',
-							description: 'Se o provider está disponível',
-						},
-						message: {
-							type: 'string',
-							description: 'Mensagem de status',
-						},
-					},
-				},
-				503: {
-					description: 'Provider indisponível',
-					type: 'object',
-					properties: {
-						provider: { type: 'string' },
-						available: { type: 'boolean', example: false },
-						message: { type: 'string' },
-					},
-				},
-			},
-		},
-		handler: checkAIHealth,
-	});
-
 	// POST /api/v1/ask/suggestions - Sugestões de perguntas
 	app.post(
 		'/api/v1/ask/suggestions',
