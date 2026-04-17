@@ -1,7 +1,9 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { AIService } from '../services/ai.service.js';
+import { AIAdapterFactory } from '../adapters/ai/index.js';
 import { cache } from '../utils/cache.js';
 import { AskRequestBody } from '../middlewares/validation.schemas.js';
+import { authenticateAdmin } from '../middlewares/auth.middleware.js';
 
 /**
  * Controller para o endpoint /ask
@@ -11,6 +13,19 @@ import { AskRequestBody } from '../middlewares/validation.schemas.js';
  * - Single Responsibility: Apenas lida com requisições /ask
  * - Dependency Injection: Recebe service como dependência
  */
+
+// Instância global do serviço (inicializada no startup)
+let aiService: AIService;
+
+/**
+ * Inicializa o AIService
+ * Deve ser chamado no startup do servidor
+ */
+export async function initializeAIService(): Promise<void> {
+	const provider = AIAdapterFactory.createFromEnv();
+	aiService = new AIService(provider, 5 * 60 * 1000); // Cache de 5 minutos
+	await aiService.initialize();
+}
 
 /**
  * Interface para o body da requisição
@@ -36,10 +51,7 @@ export async function askQuestion(
 	);
 
 	try {
-		// Cria instância do service
-		const aiService = new AIService();
-
-		// Envia pergunta para IA
+		// Usa a instância global do service (já inicializada)
 		const result = await aiService.ask(question);
 
 		// Log de sucesso
@@ -297,5 +309,80 @@ export async function registerAskRoutes(app: any): Promise<void> {
 			},
 		},
 		getSuggestions,
+	);
+
+	// GET /api/v1/ask/health - Status do provedor com cache
+	app.get(
+		'/api/v1/ask/health',
+		{
+			schema: {
+				description: 'Get AI provider health status with cache info',
+				tags: ['AI'],
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							provider: { type: 'string' },
+							available: { type: 'boolean' },
+							lastCheck: { type: 'string' },
+							cacheExpiresInSeconds: { type: 'number' },
+							timestamp: { type: 'string' },
+						},
+					},
+				},
+			},
+		},
+		async (_request: FastifyRequest, reply: FastifyReply) => {
+			const status = aiService.getAvailabilityStatus();
+			const provider = aiService.getProviderInfo().name;
+
+			return reply.status(200).send({
+				provider,
+				available: status.isAvailable,
+				lastCheck: status.lastCheck.toISOString(),
+				cacheExpiresInSeconds: status.cacheExpiresIn,
+				timestamp: new Date().toISOString(),
+			});
+		},
+	);
+
+	// POST /api/v1/ask/force-check - Força verificação (Admin)
+	app.post(
+		'/api/v1/ask/force-check',
+		{
+			preHandler: authenticateAdmin,
+			schema: {
+				description: 'Force AI provider availability check (Admin only)',
+				tags: ['AI'],
+				security: [{ adminKey: [] }],
+				response: {
+					200: {
+						type: 'object',
+						properties: {
+							provider: { type: 'string' },
+							available: { type: 'boolean' },
+							lastCheck: { type: 'string' },
+							cacheExpiresInSeconds: { type: 'number' },
+							message: { type: 'string' },
+							timestamp: { type: 'string' },
+						},
+					},
+				},
+			},
+		},
+		async (_request: FastifyRequest, reply: FastifyReply) => {
+			const isAvailable = await aiService.forceAvailabilityCheck();
+			const status = aiService.getAvailabilityStatus();
+			const provider = aiService.getProviderInfo().name;
+
+			return reply.status(200).send({
+				provider,
+				available: isAvailable,
+				lastCheck: status.lastCheck.toISOString(),
+				cacheExpiresInSeconds: status.cacheExpiresIn,
+				message: 'Availability check completed',
+				timestamp: new Date().toISOString(),
+			});
+		},
 	);
 }

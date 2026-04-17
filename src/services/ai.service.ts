@@ -8,6 +8,7 @@ import { ValidationError } from '../middlewares/error-handler.middleware.js';
 /**
  * Service para interação com IA
  * Implementa a lógica de negócio relacionada a perguntas e respostas via IA
+ * Agora com cache de disponibilidade para otimizar performance
  *
  * Princípios SOLID:
  * - Single Responsibility: Apenas gerencia interações com IA
@@ -16,11 +17,86 @@ import { ValidationError } from '../middlewares/error-handler.middleware.js';
  */
 export class AIService {
 	private provider: AIProvider;
+	private availabilityCache: {
+		isAvailable: boolean;
+		lastCheck: number;
+		checkIntervalMs: number;
+	};
 
-	constructor(provider?: AIProvider) {
+	constructor(provider?: AIProvider, checkIntervalMs: number = 5 * 60 * 1000) {
 		// Permite injeção de dependência (útil para testes)
 		// Se não fornecido, cria a partir do ambiente
 		this.provider = provider || AIAdapterFactory.createFromEnv();
+		this.availabilityCache = {
+			isAvailable: true, // Assume disponível inicialmente
+			lastCheck: 0,
+			checkIntervalMs,
+		};
+	}
+
+	/**
+	 * Verifica disponibilidade com cache
+	 * Só faz requisição se o cache expirou
+	 */
+	private async checkAvailabilityWithCache(): Promise<boolean> {
+		const now = Date.now();
+		const cacheExpired =
+			now - this.availabilityCache.lastCheck >
+			this.availabilityCache.checkIntervalMs;
+
+		// Se o cache ainda é válido, retorna o valor em cache
+		if (!cacheExpired) {
+			return this.availabilityCache.isAvailable;
+		}
+
+		// Cache expirado, faz nova verificação
+		try {
+			const isAvailable = await this.provider.isAvailable();
+			this.availabilityCache = {
+				isAvailable,
+				lastCheck: now,
+				checkIntervalMs: this.availabilityCache.checkIntervalMs,
+			};
+			return isAvailable;
+		} catch (error) {
+			// Em caso de erro na verificação, mantém último estado conhecido
+			console.error('[AIService] Error checking availability:', error);
+			return this.availabilityCache.isAvailable;
+		}
+	}
+
+	/**
+	 * Inicializa o serviço verificando disponibilidade inicial
+	 * Deve ser chamado no startup do servidor
+	 */
+	async initialize(): Promise<void> {
+		console.log(
+			'[AIService] Initializing and checking provider availability...',
+		);
+		try {
+			const isAvailable = await this.provider.isAvailable();
+
+			this.availabilityCache = {
+				isAvailable,
+				lastCheck: Date.now(),
+				checkIntervalMs: this.availabilityCache.checkIntervalMs,
+			};
+
+			if (!isAvailable) {
+				console.warn(
+					`[AIService] Warning: AI provider '${this.provider.getProviderName()}' is not available at startup`,
+				);
+			} else {
+				console.log(
+					`[AIService] AI provider '${this.provider.getProviderName()}' is available and ready`,
+				);
+			}
+		} catch (error) {
+			console.error('[AIService] Error during initialization:', error);
+			// Marca como indisponível mas não falha o startup
+			this.availabilityCache.isAvailable = false;
+			this.availabilityCache.lastCheck = Date.now();
+		}
 	}
 
 	/**
@@ -39,8 +115,8 @@ export class AIService {
 		this.validateQuestion(question);
 
 		try {
-			// Verifica se o provider está disponível
-			const isAvailable = await this.provider.isAvailable();
+			// Verifica se o provider está disponível (com cache)
+			const isAvailable = await this.checkAvailabilityWithCache();
 
 			if (!isAvailable) {
 				throw new AIProviderError(
@@ -58,6 +134,9 @@ export class AIService {
 				provider: this.provider.getProviderName(),
 			};
 		} catch (error) {
+			// Se falhar, invalida o cache para forçar nova verificação na próxima requisição
+			this.availabilityCache.lastCheck = 0;
+
 			// Se for erro de provider, relança
 			if (error instanceof AIProviderError) {
 				throw error;
@@ -130,6 +209,7 @@ export class AIService {
 
 	/**
 	 * Verifica o status do provider de IA
+	 * Usa cache para otimizar performance
 	 * @returns Status detalhado do provider
 	 */
 	async checkHealth(): Promise<{
@@ -140,7 +220,8 @@ export class AIService {
 		const providerName = this.provider.getProviderName();
 
 		try {
-			const isAvailable = await this.provider.isAvailable();
+			// Usa cache para verificação
+			const isAvailable = await this.checkAvailabilityWithCache();
 
 			return {
 				provider: providerName,
@@ -156,6 +237,42 @@ export class AIService {
 				message: `AI provider error: ${error instanceof Error ? error.message : 'Unknown error'}`,
 			};
 		}
+	}
+
+	/**
+	 * Força uma nova verificação de disponibilidade
+	 * Útil para health checks detalhados ou troubleshooting
+	 */
+	async forceAvailabilityCheck(): Promise<boolean> {
+		const isAvailable = await this.provider.isAvailable();
+		this.availabilityCache = {
+			isAvailable,
+			lastCheck: Date.now(),
+			checkIntervalMs: this.availabilityCache.checkIntervalMs,
+		};
+		return isAvailable;
+	}
+
+	/**
+	 * Retorna o status do cache de disponibilidade
+	 */
+	getAvailabilityStatus(): {
+		isAvailable: boolean;
+		lastCheck: Date;
+		cacheExpiresIn: number;
+	} {
+		const now = Date.now();
+		const expiresIn = Math.max(
+			0,
+			this.availabilityCache.checkIntervalMs -
+				(now - this.availabilityCache.lastCheck),
+		);
+
+		return {
+			isAvailable: this.availabilityCache.isAvailable,
+			lastCheck: new Date(this.availabilityCache.lastCheck),
+			cacheExpiresIn: Math.floor(expiresIn / 1000), // em segundos
+		};
 	}
 
 	/**

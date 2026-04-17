@@ -8,7 +8,10 @@ import {
 	notFoundHandler,
 } from './middlewares/error-handler.middleware.js';
 import { globalRateLimitOptions } from './middlewares/rate-limit.middleware.js';
-import { registerAskRoutes } from './controllers/ask.controller.js';
+import {
+	registerAskRoutes,
+	initializeAIService,
+} from './controllers/ask.controller.js';
 import { registerFAQRoutes } from './controllers/faq.controller.js';
 import { registerDocumentRoutes } from './controllers/document.controller.js';
 import { setupSwagger } from './config/swagger.js';
@@ -144,6 +147,11 @@ export async function buildServer(): Promise<FastifyInstance> {
 export async function startServer(): Promise<FastifyInstance> {
 	try {
 		const server = await buildServer();
+
+		// Inicializa o AIService ANTES de começar a aceitar requisições
+		server.log.info('Initializing AI Service...');
+		await initializeAIService();
+		server.log.info('AI Service initialized successfully');
 
 		// Inicia o servidor
 		await server.listen({
