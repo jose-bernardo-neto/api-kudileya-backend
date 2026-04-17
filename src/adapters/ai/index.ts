@@ -4,6 +4,8 @@ export * from './ai-provider.interface.js';
 // Export adapters
 export { GeminiAdapter } from './gemini.adapter.js';
 export { OpenAIAdapter } from './openai.adapter.js';
+export { OpenRouterAdapter } from './openrouter.adapter.js';
+export { GrokAdapter } from './grok.adapter.js';
 export { MockAdapter } from './mock.adapter.js';
 
 // Export factory

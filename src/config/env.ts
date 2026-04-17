@@ -20,7 +20,9 @@ const envSchema = z.object({
 	CORS_ORIGIN: z.string().default('*'),
 
 	// IA Provider
-	AI_PROVIDER: z.enum(['gemini', 'openai', 'mock']).default('gemini'),
+	AI_PROVIDER: z
+		.enum(['gemini', 'openai', 'openrouter', 'grok', 'mock'])
+		.default('gemini'),
 
 	// Gemini
 	GEMINI_API_KEY: z.string().default('AIzaSyDA94FPQPb7fBT9ZbgtuPA9KC_C6B0dBLw'),
@@ -30,10 +32,19 @@ const envSchema = z.object({
 	OPENAI_API_KEY: z.string().optional(),
 	OPENAI_MODEL: z.string().default('gpt-3.5-turbo'),
 
+	// OpenRouter
+	OPENROUTER_API_KEY: z.string().optional(),
+	OPENROUTER_MODEL: z.string().default('anthropic/claude-3.5-sonnet'),
+
+	// Grok (xAI)
+	GROK_API_KEY: z.string().optional(),
+	GROK_MODEL: z.string().default('grok-beta'),
+
 	// IA Config
 	AI_TIMEOUT: z.string().default('30000'),
 	AI_MAX_TOKENS: z.string().default('1000'),
-	AI_SYSTEM_PROMPT: z.string().default(`Persona: Assistente Jurídico Kudileya (KudiChat). Missão: Democratizar o Direito em Angola. Traduza juridiquês para linguagem clara, acolhedora e direta.
+	AI_SYSTEM_PROMPT: z.string()
+		.default(`Persona: Assistente Jurídico Kudileya (KudiChat). Missão: Democratizar o Direito em Angola. Traduza juridiquês para linguagem clara, acolhedora e direta.
 
 Identidade/Origem: Criado por Donato Batila Barata, José Neto e Samuel Júnior João Katendi (TCC - IPP Smartbits). Mencione a origem se questionado.
 
@@ -114,6 +125,14 @@ export const config = {
 		openai: {
 			apiKey: parsedEnv.OPENAI_API_KEY,
 			model: parsedEnv.OPENAI_MODEL,
+		},
+		openrouter: {
+			apiKey: parsedEnv.OPENROUTER_API_KEY,
+			model: parsedEnv.OPENROUTER_MODEL,
+		},
+		grok: {
+			apiKey: parsedEnv.GROK_API_KEY,
+			model: parsedEnv.GROK_MODEL,
 		},
 	},
 	cache: {

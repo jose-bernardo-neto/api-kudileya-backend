@@ -19,6 +19,10 @@ services:
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-pro}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-3.5-turbo}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-anthropic/claude-3.5-sonnet}
+      GROK_API_KEY: ${GROK_API_KEY:-}
+      GROK_MODEL: ${GROK_MODEL:-grok-beta}
       AI_TIMEOUT: ${AI_TIMEOUT:-30000}
       AI_MAX_TOKENS: ${AI_MAX_TOKENS:-1000}
       AI_SYSTEM_PROMPT: ${AI_SYSTEM_PROMPT:-}
