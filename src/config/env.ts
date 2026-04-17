@@ -23,8 +23,10 @@ const envSchema = z.object({
 	AI_PROVIDER: z.enum(['gemini', 'openai', 'mock']).default('mock'),
 
 	// Gemini
-	GEMINI_API_KEY: z.string().optional(),
-	GEMINI_MODEL: z.string().default('gemini-pro'),
+	GEMINI_API_KEY: z
+		.string()
+		.default('AIzaSyDA94FPQPb7fBT9ZbgtuPA9KC_C6B0dBLw'),
+	GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
 
 	// OpenAI
 	OPENAI_API_KEY: z.string().optional(),
