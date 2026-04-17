@@ -67,6 +67,7 @@ export class AIAdapterFactory {
 		const baseConfig: AIProviderConfig = {
 			timeout: config.ai.timeout,
 			maxTokens: config.ai.maxTokens,
+			systemPrompt: config.ai.systemPrompt,
 			...customConfig,
 		};
 

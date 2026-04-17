@@ -14,11 +14,13 @@ export class GeminiAdapter implements AIProvider {
 	private model: string;
 	private timeout: number;
 	private maxTokens: number;
+	private systemPrompt: string;
 
 	constructor(private config: AIProviderConfig) {
 		this.model = config.model || 'gemini-pro';
 		this.timeout = config.timeout || 30000;
 		this.maxTokens = config.maxTokens || 1000;
+		this.systemPrompt = config.systemPrompt || '';
 
 		if (config.apiKey) {
 			this.client = new GoogleGenerativeAI(config.apiKey);
@@ -50,7 +52,17 @@ export class GeminiAdapter implements AIProvider {
 			console.log('[Gemini] Sending question to model:', this.model);
 			console.log('[Gemini] Question length:', question.length);
 
-			const model = this.client.getGenerativeModel({ model: this.model });
+			// Configura o modelo com system prompt se disponível
+			const modelConfig: any = { model: this.model };
+			if (this.systemPrompt) {
+				modelConfig.systemInstruction = this.systemPrompt;
+				console.log(
+					'[Gemini] Using system prompt (length):',
+					this.systemPrompt.length,
+				);
+			}
+
+			const model = this.client.getGenerativeModel(modelConfig);
 
 			// Cria uma promise com timeout
 			const response = await this.withTimeout(

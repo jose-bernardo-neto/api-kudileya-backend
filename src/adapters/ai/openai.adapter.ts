@@ -14,11 +14,13 @@ export class OpenAIAdapter implements AIProvider {
 	private model: string;
 	private timeout: number;
 	private maxTokens: number;
+	private systemPrompt: string;
 
 	constructor(private config: AIProviderConfig) {
 		this.model = config.model || 'gpt-3.5-turbo';
 		this.timeout = config.timeout || 30000;
 		this.maxTokens = config.maxTokens || 1000;
+		this.systemPrompt = config.systemPrompt || '';
 
 		if (config.apiKey) {
 			this.client = new OpenAI({
@@ -40,14 +42,25 @@ export class OpenAIAdapter implements AIProvider {
 		}
 
 		try {
+			const messages: any[] = [];
+
+			// Adiciona system prompt se disponível
+			if (this.systemPrompt) {
+				messages.push({
+					role: 'system',
+					content: this.systemPrompt,
+				});
+			}
+
+			// Adiciona a pergunta do usuário
+			messages.push({
+				role: 'user',
+				content: question,
+			});
+
 			const completion = await this.client.chat.completions.create({
 				model: this.model,
-				messages: [
-					{
-						role: 'user',
-						content: question,
-					},
-				],
+				messages,
 				max_tokens: this.maxTokens,
 				temperature: 0.7,
 			});

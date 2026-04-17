@@ -23,9 +23,7 @@ const envSchema = z.object({
 	AI_PROVIDER: z.enum(['gemini', 'openai', 'mock']).default('gemini'),
 
 	// Gemini
-	GEMINI_API_KEY: z
-		.string()
-		.default('AIzaSyDA94FPQPb7fBT9ZbgtuPA9KC_C6B0dBLw'),
+	GEMINI_API_KEY: z.string().default('AIzaSyDA94FPQPb7fBT9ZbgtuPA9KC_C6B0dBLw'),
 	GEMINI_MODEL: z.string().default('gemini-pro'),
 
 	// OpenAI
@@ -35,6 +33,7 @@ const envSchema = z.object({
 	// IA Config
 	AI_TIMEOUT: z.string().default('30000'),
 	AI_MAX_TOKENS: z.string().default('1000'),
+	AI_SYSTEM_PROMPT: z.string().default(''),
 
 	// Cache
 	CACHE_TTL: z.string().default('300'),
@@ -56,8 +55,8 @@ const envSchema = z.object({
 	RATE_LIMIT_ASK_TIMEWINDOW: z.string().default('3600000'),
 
 	LOG_LEVEL: z
-        .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
-        .default('info'),
+		.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
+		.default('info'),
 });
 
 // Valida e tipifica as variáveis de ambiente
@@ -83,6 +82,7 @@ export const config = {
 		provider: parsedEnv.AI_PROVIDER,
 		timeout: parseInt(parsedEnv.AI_TIMEOUT, 10),
 		maxTokens: parseInt(parsedEnv.AI_MAX_TOKENS, 10),
+		systemPrompt: parsedEnv.AI_SYSTEM_PROMPT,
 		gemini: {
 			apiKey: parsedEnv.GEMINI_API_KEY,
 			model: parsedEnv.GEMINI_MODEL,

@@ -51,4 +51,5 @@ export interface AIProviderConfig {
 	model?: string;
 	timeout?: number;
 	maxTokens?: number;
+	systemPrompt?: string;
 }
