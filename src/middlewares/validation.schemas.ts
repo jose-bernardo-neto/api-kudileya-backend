@@ -7,12 +7,26 @@ import { z } from 'zod';
 
 // ===== ASK SCHEMAS =====
 
+export const contextMessageSchema = z.object({
+	role: z.enum(['user', 'assistant']),
+	content: z
+		.string()
+		.min(1, 'Message content cannot be empty')
+		.max(4000, 'Message content must not exceed 4000 characters'),
+});
+
+export type ContextMessage = z.infer<typeof contextMessageSchema>;
+
 export const askRequestSchema = z.object({
 	question: z
 		.string()
 		.min(3, 'Question must be at least 3 characters')
 		.max(500, 'Question must not exceed 500 characters')
 		.trim(),
+	context: z
+		.array(contextMessageSchema)
+		.max(10, 'Context must not exceed 10 messages')
+		.default([]),
 });
 
 export type AskRequestBody = z.infer<typeof askRequestSchema>;

@@ -4,6 +4,7 @@ import {
 } from '../adapters/ai/ai-provider.interface.js';
 import { AIAdapterFactory } from '../adapters/ai/ai-adapter.factory.js';
 import { ValidationError } from '../middlewares/error-handler.middleware.js';
+import { ContextMessage } from '../middlewares/validation.schemas.js';
 
 /**
  * Service para interação com IA
@@ -102,11 +103,15 @@ export class AIService {
 	/**
 	 * Envia uma pergunta para a IA e retorna a resposta
 	 * @param question - Pergunta do usuário
+	 * @param context - Histórico da conversa enviado pelo cliente (max 10 mensagens)
 	 * @returns Resposta da IA com timestamp
 	 * @throws ValidationError se a pergunta for inválida
 	 * @throws AIProviderError se houver erro na comunicação com IA
 	 */
-	async ask(question: string): Promise<{
+	async ask(
+		question: string,
+		context: ContextMessage[] = [],
+	): Promise<{
 		answer: string;
 		timestamp: string;
 		provider: string;
@@ -125,8 +130,23 @@ export class AIService {
 				);
 			}
 
+			// Monta o prompt: histórico de contexto + pergunta actual
+			let fullPrompt = question;
+
+			if (context.length > 0) {
+				const historyText = context
+					.map((m) =>
+						m.role === 'user'
+							? `Utilizador: ${m.content}`
+							: `Assistente: ${m.content}`,
+					)
+					.join('\n');
+
+				fullPrompt = `${historyText}\nUtilizador: ${question}`;
+			}
+
 			// Envia a pergunta e obtém resposta
-			const answer = await this.provider.ask(question);
+			const answer = await this.provider.ask(fullPrompt);
 
 			return {
 				answer,

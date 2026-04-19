@@ -42,17 +42,17 @@ export async function askQuestion(
 	request: AskRequestType,
 	reply: FastifyReply,
 ): Promise<void> {
-	const { question } = request.body;
+	const { question, context } = request.body;
 
 	// Log da pergunta (sem dados sensíveis)
 	request.log.info(
-		{ questionLength: question.length },
+		{ questionLength: question.length, contextMessages: context?.length ?? 0 },
 		'Processing AI question',
 	);
 
 	try {
 		// Usa a instância global do service (já inicializada)
-		const result = await aiService.ask(question);
+		const result = await aiService.ask(question, context ?? []);
 
 		// Log de sucesso
 		request.log.info(
@@ -161,6 +161,30 @@ export async function registerAskRoutes(app: any): Promise<void> {
 							minLength: 5,
 							maxLength: 500,
 							description: 'Pergunta a ser enviada para a IA',
+						},
+						context: {
+							type: 'array',
+							maxItems: 10,
+							default: [],
+							description:
+								'Histórico da conversa (últimas N mensagens, máx. 10). Ordem cronológica — mais antiga primeiro.',
+							items: {
+								type: 'object',
+								required: ['role', 'content'],
+								properties: {
+									role: {
+										type: 'string',
+										enum: ['user', 'assistant'],
+										description: 'Quem enviou a mensagem',
+									},
+									content: {
+										type: 'string',
+										minLength: 1,
+										maxLength: 4000,
+										description: 'Conteúdo da mensagem',
+									},
+								},
+							},
 						},
 					},
 				},

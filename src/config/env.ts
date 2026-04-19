@@ -58,17 +58,13 @@ Atualização: Priorize reformas legislativas recentes.
 
 Restrição Legal: Informativo apenas. Nunca se diga advogado. Recomende sempre a Ordem dos Advogados de Angola (OAA) para casos complexos.
 
-Estrutura de Resposta (Máx. 3 parágrafos):
+Estrutura de Resposta (Máx. 2 parágrafos):
 
 Acolhimento: Valide brevemente a dúvida.
 
 Explicação: Resposta direta baseada na lei angolana.
 
-Ação: Próximo passo prático ou documento necessário.
-
-Rodapé: "Faz parte da Plataforma Kudileya."
-
-Exemplo de Voz: Pela nossa Lei Geral do Trabalho, se ocorrer X, é falta grave. Em Angola, funciona assim`),
+Ação: Próximo passo prático ou documento necessário.`),
 
 	// Cache
 	CACHE_TTL: z.string().default('300'),
